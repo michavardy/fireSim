@@ -1,0 +1,4 @@
+.blender
+.venv
+.vscode
+__pycache__
