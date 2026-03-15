@@ -27,18 +27,23 @@ The current implementation focuses only on the **base environment generation**.
 
 ---
 # Setup
-`python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
+
+## download and install blender
+
+`sh scripts/install_blender.sh`
+
+## install dependencies
+`blender --background --python-expr "import ensurepip, pip install -r requirments.txt"`
 
 ---
 
-# Requirements
+### Run the script
 
-* **Blender 5.x or newer**
-* Python (included with Blender)
+You can also run the script directly from the terminal:
 
-Download Blender from:
-
-https://www.blender.org/download/
+```bash
+blender --background --python scripts/generate_scene.py
+```
 
 ---
 
@@ -64,15 +69,8 @@ fire-sim/
 └─ README.md
 ```
 
----
 
-### Run the script
 
-You can also run the script directly from the terminal:
-
-```
-python scripts/generate_scene.py
-```
 
 ---
 
