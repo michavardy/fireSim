@@ -3,11 +3,12 @@
 This project explores a **simple, fully scriptable pipeline for generating synthetic nature scenes** using **Blender and Python**.
 The long-term goal is to create realistic environments (terrain, vegetation, fire ignition, smoke, and drone viewpoints) for **synthetic image generation** that can be used to train or evaluate computer vision models for **early forest fire detection**.
 
-The current version intentionally starts with the **simplest possible scene**:
-
-* A **5×5 meter grass plane**
-* A **single tree**
-* Generated entirely via a **Python script**
+### Next Prototype
+* 5×5m natural patch
+* Single realistic tree
+* Realistic ground with rocks and shrubs
+* Scene should look photorealistic when rendered
+* Assets may be generated externally and imported into Blender
 
 This allows the environment generation pipeline to remain **reproducible, minimal, and easy to extend**.
 
