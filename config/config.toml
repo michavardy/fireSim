@@ -1,0 +1,70 @@
+[scene]
+size = 5.0
+seed = 84
+tree_clearance = 1.1
+margin = 0.35
+
+[ground]
+subdivisions = 180
+noise_scale = 0.92
+displacement_strength = 0.26
+bump_strength = 0.75
+roughness = 0.87
+color_low = [0.12, 0.28, 0.13, 1.0]
+color_high = [0.24, 0.18, 0.08, 1.0]
+
+[tree]
+height = 3.8
+trunk_radius = 0.12
+branch_factor = 3
+branch_depth = 3
+branch_length_factor = 0.75
+branch_radius_factor = 0.6
+leaf_radius = 0.45
+leaf_start_depth = 1
+leaf_cluster_size = 5
+bark_color_low = [0.32, 0.18, 0.08, 1.0]
+bark_color_high = [0.43, 0.28, 0.12, 1.0]
+leaf_color_low = [0.04, 0.36, 0.12, 1.0]
+leaf_color_high = [0.16, 0.58, 0.24, 1.0]
+bark_noise = 3.5
+bark_bump = 0.9
+leaf_noise = 4.6
+leaf_bump = 0.45
+
+[shrubs]
+count = 10
+scale_range = [0.28, 0.55]
+height_range = [0.35, 0.65]
+detail = 2
+noise_scale = 3.6
+displace_strength = 0.32
+bump_strength = 0.4
+color_low = [0.1, 0.32, 0.12, 1.0]
+color_high = [0.18, 0.5, 0.24, 1.0]
+
+[rocks]
+count = 12
+scale_range = [0.2, 0.5]
+noise_scale = 1.9
+displace_strength = 0.6
+bump_strength = 0.9
+flatten = 0.65
+color_low = [0.25, 0.24, 0.22, 1.0]
+color_high = [0.45, 0.45, 0.4, 1.0]
+
+[render]
+samples = 64
+resolution_x = 1280
+resolution_y = 720
+blend_name = "scene.blend"
+image_name = "scene.png"
+camera_distance = 5.2
+camera_height = 3.5
+camera_lens = 40
+camera_target_height = 1.4
+sun_strength = 6.5
+sun_elevation = 52
+sun_rotation = -30
+world_strength = 1.2
+
