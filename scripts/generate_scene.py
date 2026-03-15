@@ -142,8 +142,41 @@ def create_ground(config: dict, material: bpy.types.Material) -> bpy.types.Objec
     return ground
 
 
+
+def create_leaf_plane(
+    position: Vector,
+    direction: Vector,
+    radius: float,
+    leaf_material: bpy.types.Material,
+) -> bpy.types.Object:
+    bpy.ops.mesh.primitive_plane_add(size=1, location=position)
+    leaf = bpy.context.object
+    vertical_tilt = math.radians(90) + random.uniform(-0.18, 0.18)
+    leaf.rotation_euler = (
+        vertical_tilt,
+        random.uniform(-0.15, 0.15),
+        0.0,
+    )
+    horizontal = Vector((direction.x, direction.y, 0.0))
+    if horizontal.length == 0:
+        heading = random.uniform(0, math.tau)
+    else:
+        heading = math.atan2(horizontal.y, horizontal.x)
+    leaf.rotation_euler[2] = heading + random.uniform(-0.6, 0.6)
+    leaf.scale = (
+        radius * random.uniform(0.6, 0.85),
+        radius * random.uniform(0.9, 1.2),
+        1.0,
+    )
+    leaf.location.z += random.uniform(-radius * 0.05, radius * 0.1)
+    leaf.data.materials.clear()
+    leaf.data.materials.append(leaf_material)
+    return leaf
+
+
 def create_leaf_cluster(
     position: Vector,
+    direction: Vector,
     tree_cfg: dict,
     leaf_material: bpy.types.Material,
     tree_objects: list[bpy.types.Object],
@@ -157,23 +190,33 @@ def create_leaf_cluster(
                 random.uniform(-0.15, 0.35),
             )
         )
-        radius = tree_cfg["leaf_radius"] * random.uniform(0.7, 1.2)
-        bpy.ops.mesh.primitive_ico_sphere_add(
-            subdivisions=3,
-            radius=radius,
-            location=position + offset,
-        )
-        leaf = bpy.context.object
-        leaf.name = f"Leaf_{len(tree_objects)}"
-        leaf.data.materials.clear()
-        leaf.data.materials.append(leaf_material)
-        leaf.rotation_euler = (
-            random.uniform(0, math.tau),
-            random.uniform(0, math.tau),
-            random.uniform(0, math.tau),
-        )
-        leaf.scale *= random.uniform(0.85, 1.2)
-        smooth_object(leaf)
+        leaf_pos = position + offset
+        radius = tree_cfg["leaf_radius"] * random.uniform(0.55, 1.2)
+        if random.random() < 0.55:
+            bpy.ops.mesh.primitive_ico_sphere_add(
+                subdivisions=2,
+                radius=radius,
+                location=leaf_pos,
+            )
+            leaf = bpy.context.object
+            leaf.name = f"Leaf_{len(tree_objects)}"
+            leaf.data.materials.clear()
+            leaf.data.materials.append(leaf_material)
+            leaf.rotation_euler = (
+                random.uniform(0, math.tau),
+                random.uniform(0, math.tau),
+                random.uniform(0, math.tau),
+            )
+            leaf.scale *= random.uniform(0.75, 1.1)
+            smooth_object(leaf)
+        else:
+            leaf = create_leaf_plane(
+                leaf_pos,
+                direction,
+                radius * random.uniform(0.7, 1.0),
+                leaf_material,
+            )
+            leaf.name = f"LeafPlane_{len(tree_objects)}"
         tree_objects.append(leaf)
 
 
@@ -197,7 +240,7 @@ def create_tree(config: dict, materials: dict[str, bpy.types.Material]) -> list[
 
         tip = origin + direction * length
         if depth >= tree_cfg["leaf_start_depth"]:
-            create_leaf_cluster(tip, tree_cfg, materials["leaf"], tree_objects)
+            create_leaf_cluster(tip, direction, tree_cfg, materials["leaf"], tree_objects)
         if depth >= tree_cfg["branch_depth"]:
             return
 
@@ -257,17 +300,78 @@ def sample_ground_height(scene: bpy.types.Scene, depsgraph, x: float, y: float, 
     return 0.0
 
 
-def random_ground_position(config: dict) -> tuple[float, float]:
+def random_ground_position(
+    config: dict,
+    min_distance: float | None = None,
+    max_distance: float | None = None,
+) -> tuple[float, float]:
     scene_size = config["scene"]["size"]
     margin = config["scene"].get("margin", 0.5)
     half = scene_size / 2 - margin
     clearance = config["scene"].get("tree_clearance", 1.2)
+    min_dist = max(clearance, min_distance) if min_distance is not None else clearance
+    max_dist = half if max_distance is None else min(max_distance, half)
+    if max_dist < min_dist:
+        max_dist = min_dist
     while True:
         x = random.uniform(-half, half)
         y = random.uniform(-half, half)
-        if math.hypot(x, y) < clearance:
+        dist = math.hypot(x, y)
+        if dist < min_dist or dist > max_dist:
             continue
         return x, y
+
+
+
+def create_grass_blade(
+    x: float,
+    y: float,
+    z: float,
+    index: int,
+    config: dict,
+    material: bpy.types.Material,
+) -> bpy.types.Object:
+    grass_cfg = config["grass"]
+    height = random.uniform(*grass_cfg["blade_height_range"])
+    width = grass_cfg.get("blade_width", 0.035)
+    location = (
+        x + random.uniform(-0.02, 0.02),
+        y + random.uniform(-0.02, 0.02),
+        z + height * 0.5,
+    )
+    bpy.ops.mesh.primitive_plane_add(size=1, location=location)
+    blade = bpy.context.object
+    blade.name = f"GrassBlade_{index}"
+    tilt = math.radians(90) + random.uniform(-0.18, 0.18)
+    blade.rotation_euler = (
+        tilt,
+        random.uniform(-0.3, 0.3),
+        random.uniform(0, math.tau),
+    )
+    blade.scale = (
+        width * random.uniform(0.6, 1.0),
+        height,
+        1.0,
+    )
+    blade.data.materials.clear()
+    blade.data.materials.append(material)
+    return blade
+
+
+def scatter_grass(
+    config: dict,
+    scene: bpy.types.Scene,
+    depsgraph,
+    grass_material: bpy.types.Material,
+) -> list[bpy.types.Object]:
+    grass_cfg = config["grass"]
+    blades: list[bpy.types.Object] = []
+    for idx in range(grass_cfg["count"]):
+        x, y = random_ground_position(config)
+        z = sample_ground_height(scene, depsgraph, x, y, config)
+        blade = create_grass_blade(x, y, z, idx + 1, config, grass_material)
+        blades.append(blade)
+    return blades
 
 
 def create_shrub(
@@ -380,9 +484,31 @@ def scatter_rocks(
     rock_material: bpy.types.Material,
 ) -> list[Path]:
     rocks_cfg = config["rocks"]
+    scene_cfg = config["scene"]
+    half = scene_cfg["size"] / 2 - scene_cfg.get("margin", 0.5)
+    clearance = scene_cfg.get("tree_clearance", 1.2)
+    cluster_count = rocks_cfg.get("cluster_count", 2)
+    centers: list[tuple[float, float]] = []
+    for _ in range(cluster_count):
+        centers.append(
+            random_ground_position(
+                config,
+                min_distance=clearance + 0.45,
+                max_distance=half - 0.35,
+            )
+        )
     exported: list[Path] = []
     for idx in range(rocks_cfg["count"]):
-        x, y = random_ground_position(config)
+        ring_min = rocks_cfg.get("min_distance_from_tree", clearance + 0.25)
+        ring_max = rocks_cfg.get("max_distance_from_tree", half)
+        if centers and random.random() < 0.65:
+            base_x, base_y = random.choice(centers)
+            x = base_x + random.uniform(-0.6, 0.6)
+            y = base_y + random.uniform(-0.6, 0.6)
+            if math.hypot(x, y) > half:
+                x, y = random_ground_position(config, min_distance=ring_min, max_distance=ring_max)
+        else:
+            x, y = random_ground_position(config, min_distance=ring_min, max_distance=ring_max)
         z = sample_ground_height(scene, depsgraph, x, y, config)
         rock = create_rock(x, y, z, idx + 1, config, rock_material)
         asset_path = ROCK_DIR / f"rock_{idx + 1}.glb"
@@ -541,6 +667,16 @@ def main() -> None:
         roughness=0.6,
         metallic=0.0,
     )
+    grass_material = create_procedural_material(
+        "GrassMat",
+        config["grass"]["color_low"],
+        config["grass"]["color_high"],
+        config["grass"].get("noise_scale", 4.5),
+        config["grass"].get("bump_strength", 0.3),
+        roughness=0.6,
+        subsurface=0.2,
+    )
+    grass_blades = scatter_grass(config, scene, depsgraph, grass_material)
 
     shrub_assets = scatter_shrubs(config, scene, depsgraph, shrub_material)
     rock_assets = scatter_rocks(config, scene, depsgraph, rock_material)
@@ -557,6 +693,8 @@ def main() -> None:
     print(f"  Render: {render_path}")
     print(f"  Tree asset: {tree_asset}")
     print(f"  Terrain asset: {terrain_asset}")
+    print(f"  Grass blades: {len(grass_blades)} objects")
+
     print(f"  Shrub assets: {len(shrub_assets)} files")
     print(f"  Rock assets: {len(rock_assets)} files")
 
