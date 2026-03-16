@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Iterator
 
 import boto3
-from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
 
@@ -17,7 +16,7 @@ class S3AssetClient:
 
     def __init__(self):
 
-        self.bucket = os.getenv("S3_API_KEY_NAME")
+        self.bucket = os.getenv("S3_BUCKET_NAME") or os.getenv("S3_API_KEY_NAME")
         access_key = os.getenv("S3_API_KEY_ACCESS_KEY")
         secret_key = os.getenv("S3_API_KEY_SECRET_ACCESS_KEY")
 

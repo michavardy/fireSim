@@ -163,5 +163,21 @@ The new test suite uses `moto` to mock S3 so the upload/list/download/stream flo
 
 ---
 
+### Scripts
+
+Use `python scripts/load_all_assets.py` to push the local `assets/` directory into S3 so the Blender renders always reference the same shared objects. The script leverages `src/clients/s3_client.py`, so it honors the same credentials and bucket configuration used elsewhere.
+
+Before running it, make sure the bucket name and API credentials are available via environment variables (or a `.env` file that `dotenv` reads):
+
+```bash
+export S3_BUCKET_NAME=my-bucket             # or S3_API_KEY_NAME for backwards compatibility
+export S3_API_KEY_ACCESS_KEY=AKIA...
+export S3_API_KEY_SECRET_ACCESS_KEY=...
+python scripts/load_all_assets.py --asset-dir assets
+```
+
+The asset directory defaults to `assets/`, but you can point at a different path with `--asset-dir` and temporarily override the bucket via `--bucket` when needed.
+
+
 
 
