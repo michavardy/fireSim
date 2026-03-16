@@ -40,11 +40,13 @@ The current implementation focuses only on the **base environment generation**.
 
 ### Run the script
 
-You can also run the script directly from the terminal:
+You can rebuild the photorealistic scene from the terminal:
 
 ```bash
-blender --background --python scripts/generate_scene.py
+timeout 120 blender --background --python scripts/generate_tree_scene.py
 ```
+
+The script saves the Blender file at `output/tree.blend` and the render at `output/tree.png`.
 
 ---
 
@@ -57,7 +59,7 @@ fire-sim/
 │  └─ ... config files
 |
 ├─ scripts/
-│  └─ generate_scene.py
+│  └─ generate_tree_scene.py
 │
 ├─ assets/                # (future)
 │  ├─ trees
@@ -79,14 +81,14 @@ fire-sim/
 
 The generated environment includes:
 
-| Element      | Description                                |
-| ------------ | ------------------------------------------ |
-| Ground       | 5×5 meter plane with simple grass material |
-| Tree trunk   | Cylinder mesh                              |
-| Tree foliage | Cone mesh                                  |
-| Lighting     | Default viewport lighting                  |
+| Element      | Description                                                         |
+| ------------ | ------------------------------------------------------------------- |
+| Ground       | 5×5 meter terrain with noise-driven displacement and layered grass shader |
+| Tree         | Realistic `tree_small_02_4k` asset imported from `assets/tree_1`, centered and grounded |
+| Lighting     | Sun lamp combined with an area fill light and a blue-tinted sky background |
+| Camera       | 35 mm camera positioned diagonally to frame the tree from a natural angle |
 
-This minimal configuration ensures the system works before introducing more complex simulation components.
+This setup creates a small natural patch with a single realistic tree perched on gently undulating terrain.
 
 ---
 
