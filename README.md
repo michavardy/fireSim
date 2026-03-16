@@ -176,6 +176,11 @@ export S3_API_KEY_SECRET_ACCESS_KEY=...
 python scripts/load_all_assets.py --asset-dir assets
 ```
 
+
+`python scripts/assets_manager.py` exposes `--load_all`, `--load_dir`, `--list`, and `--rm` for managing objects inside the configured bucket. Pass `--bucket` to temporarily override the target bucket name for any run.
+
+When real AWS credentials are unavailable, the new `--mock` flag runs the command against a moto-backed S3 service: it seeds fake credentials, creates the requested bucket, and keeps the familiar CLI surface while only touching in-memory storage. Combine `--mock` with `--bucket` if you want to name the fake bucket, and make sure moto (plus boto3/python-dotenv) is installed before using this mode.
+
 The asset directory defaults to `assets/`, but you can point at a different path with `--asset-dir` and temporarily override the bucket via `--bucket` when needed.
 
 

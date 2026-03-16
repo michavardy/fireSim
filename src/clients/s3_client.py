@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Iterator
 
 import boto3
+from boto3.s3.transfer import TransferConfig
 from dotenv import load_dotenv
 
 
@@ -28,6 +29,7 @@ class S3AssetClient:
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
         )
+        self.transfer_config = TransferConfig(multipart_threshold=256 * 1024 * 1024)
 
     # ------------------------------------------------
     # Upload
@@ -53,6 +55,7 @@ class S3AssetClient:
                     str(file),
                     self.bucket,
                     key,
+                    Config=self.transfer_config,
                 )
 
                 uploaded.append(key)
@@ -77,6 +80,47 @@ class S3AssetClient:
                 keys.append(obj["Key"])
 
         return keys
+
+    def delete_objects(self, keys: List[str]) -> List[str]:
+        """
+        Delete a collection of object keys from the bucket using batch delete.
+        """
+
+        if not keys:
+            return []
+
+        deleted = []
+
+        for chunk_start in range(0, len(keys), 1000):
+            chunk = keys[chunk_start : chunk_start + 1000]
+            delete_response = self.client.delete_objects(
+                Bucket=self.bucket,
+                Delete={"Objects": [{"Key": key} for key in chunk]},
+            )
+            deleted.extend(obj["Key"] for obj in delete_response.get("Deleted", []))
+
+        return deleted
+
+    def delete_prefix(self, prefix: str) -> List[str]:
+        """
+        Recursively delete every key that matches or begins with the given prefix.
+        """
+
+        normalized_prefix = prefix.strip("/")
+        if not normalized_prefix:
+            return []
+
+        keys_to_delete = [
+            key
+            for key in self.list_assets()
+            if key == normalized_prefix or key.startswith(f"{normalized_prefix}/")
+        ]
+
+        if not keys_to_delete:
+            return []
+
+        return self.delete_objects(keys_to_delete)
+
 
     # ------------------------------------------------
     # Download

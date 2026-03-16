@@ -1,3 +1,4 @@
+import os
 import subprocess
 from distutils.version import LooseVersion
 from pathlib import Path
@@ -11,8 +12,8 @@ OUTPUT_BLEND = REPO_ROOT / "output" / "tree.blend"
 OUTPUT_PNG = REPO_ROOT / "output" / "tree.png"
 
 
-def _run(command):
-    return subprocess.run(command, capture_output=True, text=True)
+def _run(command, env=None):
+    return subprocess.run(command, capture_output=True, text=True, env=env)
 
 
 def blender_cmd(*args, timeout_seconds: int = 120):
@@ -22,7 +23,9 @@ def blender_cmd(*args, timeout_seconds: int = 120):
 @pytest.fixture(scope="session")
 def generated_scene():
     command = blender_cmd("--background", "--python", str(SCENE_SCRIPT))
-    result = _run(command)
+    env = os.environ.copy()
+    env["FIRE_SIM_FAST_RENDER"] = "1"
+    result = _run(command, env=env)
     print(result.stdout)
     if result.returncode != 0:
         print("Scene generation stderr:\n", result.stderr)
