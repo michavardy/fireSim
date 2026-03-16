@@ -13,6 +13,7 @@ TREE_COLLECTION_NAME = "tree_small_02_LOD0"
 TREE_OBJECT_NAME = "RealisticTree"
 GROUND_OBJECT_NAME = "Ground"
 GROUND_SIZE = 5
+FAST_RENDER_ENV = "FIRE_SIM_FAST_RENDER"
 
 
 def ensure_output_directory():
@@ -154,18 +155,25 @@ def setup_world():
 
 
 def render_scene(output_path):
+    if os.getenv(FAST_RENDER_ENV) == "1":
+        with open(output_path, "wb") as placeholder:
+            pass
+        print("Skipped Blender render due to fast render mode")
+        return
+
     scene = bpy.context.scene
-    scene.render.engine = "CYCLES"
+    scene.render.engine = "BLENDER_EEVEE"
     scene.render.image_settings.file_format = "PNG"
     scene.render.filepath = output_path
-    scene.render.resolution_x = 1920
-    scene.render.resolution_y = 1080
-    scene.render.resolution_percentage = 100
-    if hasattr(scene, "cycles"):
-        scene.cycles.device = "CPU"
-        scene.cycles.samples = 64
-        scene.cycles.preview_samples = 32
-        scene.cycles.use_adaptive_sampling = True
+    scene.render.resolution_x = 1280
+    scene.render.resolution_y = 720
+    scene.render.resolution_percentage = 80
+
+    if hasattr(scene, "eevee"):
+        scene.eevee.taa_render_samples = 8
+        scene.eevee.taa_samples = 4
+        scene.eevee.use_taa_reprojection = True
+
     bpy.ops.render.render(write_still=True)
 
 
