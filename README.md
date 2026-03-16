@@ -144,5 +144,24 @@ Potential sources for realistic vegetation and terrain:
 These will allow the environment to scale from a single tree to **large forest scenes**.
 
 ---
+## Testing
+
+1. Install project dependencies and the S3 testing helpers:
+
+   ```bash
+   pip install -r requirements.txt
+   pip install pytest moto boto3 python-dotenv
+   ```
+
+2. Run the dedicated S3 client tests (they rely on `assets/tree_1` for the sample textures):
+
+   ```bash
+   pytest tests/test_s3_client.py
+   ```
+
+The new test suite uses `moto` to mock S3 so the upload/list/download/stream flows can be exercised without hitting real AWS endpoints.
+
+---
+
 
 
