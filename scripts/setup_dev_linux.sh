@@ -197,6 +197,6 @@ log "Creating required directories"
 mkdir -p "$REPO_ROOT/assets" "$REPO_ROOT/output"
 
 log "Validating scene generation"
-blender --background --python "$REPO_ROOT/scripts/generate_scene.py"
+timeout 120 blender --background --python "$REPO_ROOT/scripts/generate_tree_scene.py"
 
 echo "Dev environment ready"

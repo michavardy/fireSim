@@ -2,17 +2,36 @@ import subprocess
 from distutils.version import LooseVersion
 from pathlib import Path
 
+import pytest
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENE_SCRIPT = REPO_ROOT / "scripts" / "test.py"
+SCENE_SCRIPT = REPO_ROOT / "scripts" / "generate_tree_scene.py"
+OUTPUT_BLEND = REPO_ROOT / "output" / "tree.blend"
+OUTPUT_PNG = REPO_ROOT / "output" / "tree.png"
 
 
 def _run(command):
     return subprocess.run(command, capture_output=True, text=True)
 
 
+def blender_cmd(*args, timeout_seconds: int = 120):
+    return ["timeout", str(timeout_seconds), "blender", *args]
+
+
+@pytest.fixture(scope="session")
+def generated_scene():
+    command = blender_cmd("--background", "--python", str(SCENE_SCRIPT))
+    result = _run(command)
+    print(result.stdout)
+    if result.returncode != 0:
+        print("Scene generation stderr:\n", result.stderr)
+    assert result.returncode == 0, "Scene generation script failed"
+    return result
+
+
 def test_blender_version():
-    result = _run(["blender", "--version"])
+    result = _run(blender_cmd("--version"))
     print("Blender version output:\n", result.stdout)
     assert result.returncode == 0, result.stderr
 
@@ -28,23 +47,33 @@ def test_blender_version():
 
 
 def test_blender_python_executes():
-    result = _run([
-        "blender",
-        "--background",
-        "--python-expr",
-        "print('BLENDER_PYTHON_OK')",
-    ])
+    result = _run(
+        blender_cmd("--background", "--python-expr", "print('BLENDER_PYTHON_OK')")
+    )
     print(result.stdout)
     assert result.returncode == 0, result.stderr
     assert "BLENDER_PYTHON_OK" in result.stdout
 
 
-def test_scene_script_runs():
-    result = _run([
-        "blender",
-        "--background",
-        "--python",
-        str(SCENE_SCRIPT),
-    ])
-    print(result.stdout)
-    assert result.returncode == 0, result.stderr
+def test_scene_script_runs(generated_scene):
+    assert generated_scene.returncode == 0
+
+
+def test_output_files_exist(generated_scene):
+    assert OUTPUT_BLEND.exists(), "Blender scene file is missing"
+    assert OUTPUT_PNG.exists(), "Render image is missing"
+
+
+def test_blend_contains_tree_and_ground(generated_scene):
+    check = _run(
+        blender_cmd(
+            "--background",
+            str(OUTPUT_BLEND),
+            "--python-expr",
+            "import bpy; names = {obj.name for obj in bpy.data.objects}; assert 'Ground' in names and 'RealisticTree' in names; print('objects verified')",
+        )
+    )
+    print(check.stdout)
+    if check.returncode != 0:
+        print("Blend validation stderr:\n", check.stderr)
+    assert check.returncode == 0, "Loaded blend did not contain the expected objects"
