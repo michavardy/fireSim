@@ -135,3 +135,14 @@ def test_assets_manager_cli_round_trip(
             for key in s3_client.list_assets()
         )
 
+
+def test_assets_manager_cli_mock_mode_reports_empty_bucket(
+    assets_manager_module,
+):
+    listing = io.StringIO()
+    assert assets_manager_module.main(
+        ["--mock", "--bucket", TEST_BUCKET, "--list"],
+        output_stream=listing,
+    ) == 0
+    assert "(empty bucket)" in listing.getvalue()
+
